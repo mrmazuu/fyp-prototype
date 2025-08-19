@@ -35,6 +35,7 @@ def custom_exception_handler(exc, context):
         return error_response(
             message="You do not have permission to perform this action",
             code=status.HTTP_403_FORBIDDEN,
+            errors=exc.detail
         )
 
     # Validation errors
