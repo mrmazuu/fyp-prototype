@@ -1,0 +1,157 @@
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.exceptions import NotAuthenticated
+from django.contrib.auth import login
+from django.db import DatabaseError
+from drf_spectacular.utils import extend_schema
+from accounts.serializers import UserSerializer, LoginSerializer, UserInfoSerializer
+from accounts.utils import (
+    create_welcome_msg,
+    normalize_userinfo,
+    create_logger,
+    success_response,
+    error_response,
+)
+
+logger = create_logger(__name__)
+
+
+@extend_schema(
+    summary="User Signup",
+    description="Register a new user with `email`, `name`, `password`, and `role`. "
+    "Both email and name will be stored in lowercase.",
+    request=UserSerializer,
+    responses={
+        201: {
+            "example": {
+                "success": True,
+                "message": "User registered successfully",
+                "user_info": {
+                    "name": "Ali Hamza",
+                    "email": "user@example.com",
+                    "role": "ADMIN",
+                },
+            }
+        },
+        400: {"example": {"success": False, "message": "Invalid data"}},
+        500: {
+            "example": {
+                "success": False,
+                "message": "Database error occurred while creating user",
+            }
+        },
+    },
+    tags=["Authentication"],
+)
+@api_view(["POST"])
+def signup_view(request):
+    """
+    User Signup API
+    """
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        try:
+            serializer.save()
+            return success_response(
+                message="User registered successfully",
+                code=status.HTTP_201_CREATED,
+                user_info=normalize_userinfo(serializer.data),
+            )
+        except DatabaseError:
+            return error_response(
+                message="Database error occurred while creating user",
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except Exception as e:
+            return error_response(
+                message=f"Unexpected error: {str(e)}",
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    return error_response(message="Invalid data", errors=serializer.errors)
+
+
+@extend_schema(
+    summary="User Login",
+    description="Authenticate a user by `email`, `password`, and `role`. "
+    "Returns a welcome message depending on role.",
+    request=LoginSerializer,
+    responses={
+        200: {
+            "example": {
+                "success": True,
+                "message": "Welcome!",
+                "user_info": {
+                    "name": "Ali Hamza",
+                    "email": "user@example.com",
+                    "role": "ADMIN",
+                },
+            }
+        },
+        400: {"example": {"success": False, "message": "Invalid credentials"}},
+        500: {"example": {"success": False, "message": "Error starting session"}},
+    },
+    tags=["Authentication"],
+)
+@api_view(["POST"])
+def login_view(request):
+    """
+    User Login API with role validation
+    """
+    serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return error_response(message="Invalid credentials", errors=serializer.errors)
+
+    user = serializer.validated_data["user"]
+    try:
+        login(request, user)
+    except Exception as e:
+        return error_response(
+            message=f"Error starting session: {str(e)}",
+            code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    welcome_msg = create_welcome_msg(user.name, user.role)
+    return success_response(message=welcome_msg)
+
+
+@extend_schema(
+    summary="Get User Info",
+    description="Retrieve the currently logged-in user's profile information.",
+    responses={
+        200: UserInfoSerializer,
+        401: {"example": {"success": False, "message": "Invalid user session"}},
+    },
+    tags=["User"],
+)
+@api_view(["GET"])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def user_info_view(request):
+    """
+    Get logged-in user's information
+    """
+    try:
+        serializer = UserInfoSerializer(request.user)
+        userinfo = normalize_userinfo(serializer.data)
+        welcome_message = create_welcome_msg(userinfo["name"], userinfo["role"])
+        return success_response(message=welcome_message, user_info=userinfo)
+    except NotAuthenticated:
+        return error_response(
+            message="Invalid or missing authentication credentials",
+            code=status.HTTP_401_UNAUTHORIZED,
+        )
+    except AttributeError:
+        return error_response(
+            message="Invalid user session", code=status.HTTP_401_UNAUTHORIZED
+        )
+    except Exception as e:
+        return error_response(
+            message=f"Unexpected error: {str(e)}",
+            code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
