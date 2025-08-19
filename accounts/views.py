@@ -177,31 +177,3 @@ def user_info_view(request):
             message=f"Unexpected error: {str(e)}",
             code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
-
-@extend_schema(
-    summary="Logout User",
-    description="Logs out the currently authenticated user and clears their session.",
-    responses={
-        200: {"example": {"success": True, "message": "Successfully logged out."}},
-        401: {"example": {"success": False, "message": "Invalid user session"}},
-    },
-    tags=["User"],
-)
-@api_view(["POST"])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    try:
-        if request.user.is_authenticated:
-            logout(request)
-            return success_response(message="Successfully logged out.")
-        else:
-            return error_response(message="Invalid user session",
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-    except Exception as e:
-        return error_response(
-            message=f"Logout failed: {str(e)}",
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
