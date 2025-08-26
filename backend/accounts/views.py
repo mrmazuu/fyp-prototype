@@ -24,19 +24,14 @@ logger = create_logger(__name__)
 
 @extend_schema(
     summary="User Signup",
-    description="Register a new user with `email`, `name`, `password`, and `role`. "
-    "Both email and name will be stored in lowercase.",
+    description="Register a new user with `username`, `email`, `name`, `password`, and `role`. "
+    "username, email and name will be stored in lowercase.",
     request=UserSerializer,
     responses={
         201: {
             "example": {
                 "success": True,
-                "message": "User registered successfully",
-                "user_info": {
-                    "name": "Ali Hamza",
-                    "email": "user@example.com",
-                    "role": "ADMIN",
-                },
+                "message": "User registered successfully"
             }
         },
         400: {"example": {"success": False, "message": "Invalid data"}},
@@ -65,8 +60,7 @@ def signup_view(request):
             )
             return success_response(
                 message="User registered successfully",
-                code=status.HTTP_201_CREATED,
-                user_info=normalize_userinfo(serializer.data),
+                code=status.HTTP_201_CREATED
             )
         except DatabaseError as db_err:
             logger.error("Database error during signup", exc_info=True)
@@ -86,7 +80,7 @@ def signup_view(request):
 
 @extend_schema(
     summary="User Login",
-    description="Authenticate a user by `email`, `password`, and `role`. "
+    description="Authenticate a user by `username`, `password`, and `role`. "
     "Returns a welcome message depending on role.",
     request=LoginSerializer,
     responses={
@@ -94,11 +88,6 @@ def signup_view(request):
             "example": {
                 "success": True,
                 "message": "Welcome!",
-                "user_info": {
-                    "name": "Ali Hamza",
-                    "email": "user@example.com",
-                    "role": "ADMIN",
-                },
             }
         },
         400: {"example": {"success": False, "message": "Invalid credentials"}},
@@ -157,7 +146,7 @@ def user_info_view(request):
         welcome_message = create_welcome_msg(userinfo["name"], userinfo["role"])
         logger.info(
             "User info retrieved successfully",
-            extra={"user_id": request.user.user_id, "email": request.user.email},
+            extra={"user_id": request.user.user_id, "username": request.user.username},
         )
         return success_response(message=welcome_message, user_info=userinfo)
     except NotAuthenticated:

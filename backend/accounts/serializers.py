@@ -6,8 +6,8 @@ from accounts.models import User, ROLE_CHOICES
 def data_serializer(data):
     if "role" in data and isinstance(data["role"], str):
         data["role"] = data["role"].upper()
-    if "email" in data and isinstance(data["email"], str):
-        data["email"] = data["email"].lower()
+    if "username" in data and isinstance(data["username"], str):
+        data["username"] = data["username"].lower()
     if "name" in data and isinstance(data["name"], str):
         data["name"] = data["name"].lower()
     return data
@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["user_id", "email", "name", "password", "role"]
+        fields = ["user_id", "username", "email", "name", "password", "role"]
         extra_kwargs = {
             "password": {"write_only": True},
         }
@@ -30,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def create(self, validated_data):
+        validated_data = data_serializer(validated_data)  # ensure normalization
         password = validated_data.pop("password")
         user = User.objects.create(**validated_data)
         user.set_password(password)
@@ -40,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     """Serializer for user login."""
 
-    email = serializers.EmailField()
+    username = serializers.CharField()
     password = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(choices=ROLE_CHOICES)
 
@@ -49,15 +50,15 @@ class LoginSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
     def validate(self, data):
-        email = data["email"]
+        username = data["username"]
         password = data["password"]
         role = data["role"]
 
         # Check if user exists
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(username=username)
         except ObjectDoesNotExist:
-            raise serializers.ValidationError({"email": ["Invalid email"]})
+            raise serializers.ValidationError({"username": ["Invalid username"]})
 
         # Check password separately
         if not user.check_password(password):
@@ -65,7 +66,7 @@ class LoginSerializer(serializers.Serializer):
 
         # Case-insensitive role check
         if user.role.upper() != role.upper():
-            raise serializers.ValidationError({"role": ["Role mismatch"]})
+            raise serializers.ValidationError({"role": ["Invalid Role"]})
 
         data["user"] = user
         return data
@@ -76,4 +77,4 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["user_id", "email", "name", "role", "created_at", "updated_at"]
+        fields = ["user_id", "username", "email", "name", "role", "created_at", "updated_at"]

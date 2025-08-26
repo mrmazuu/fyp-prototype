@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      margin: 0;
+    }
+    .dashboard {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      width: 350px;
+      text-align: center;
+    }
+    .dashboard h2 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    .dashboard p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 0.7rem 1.5rem;
+      background: #ff6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background: #e45757;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h2 id="welcomeMsg"></h2>
+    <p id="roleMsg"></p>
+    <button class="btn" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("loggedInUser"));
+
+    if (!user) {
+      window.location.href = "login.html"; // Redirect if not logged in
+    }
+
+    const welcomeMsg = document.getElementById("welcomeMsg");
+    const roleMsg = document.getElementById("roleMsg");
+
+    if (user) {
+      welcomeMsg.textContent = `Welcome ${user.role}`;
+      if (user.role === "Admin") {
+        roleMsg.textContent = "You can manage all system activities.";
+      } else if (user.role === "User") {
+        roleMsg.textContent = "You can track and submit your reports.";
+      } else if (user.role === "Viewer") {
+        roleMsg.textContent = "You have read-only access.";
+      }
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

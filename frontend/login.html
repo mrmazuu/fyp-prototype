@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4); /* same as dashboard */
+      margin: 0;
+    }
+    .login-container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      width: 320px;
+      position: relative;
+    }
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #444;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.7rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #ff6b6b; /* consistent accent color */
+    }
+    .btn {
+      width: 100%;
+      padding: 0.8rem;
+      background: #ff6b6b; /* consistent with logout button in dashboard */
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background: #e45757;
+    }
+    /* Error card styling */
+    .error-card {
+      position: absolute;
+      top: -70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ee3030;
+      color: #fff;
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      pointer-events: none;
+    }
+    .error-card.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
+      <div class="form-group">
+        <label for="role">Select Role</label>
+        <select id="role" required>
+          <option value="">--Select--</option>
+          <option value="Admin">Admin</option>
+          <option value="User">User</option>
+          <option value="Viewer">Viewer</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Login</button>
+    </form>
+    <div id="errorCard" class="error-card"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const errorCard = document.getElementById("errorCard");
+
+    // Hardcoded credentials
+    const credentials = {
+      Admin: { username: "admin", password: "12345" },
+      User: { username: "user", password: "12345" },
+      Viewer: { username: "viewer", password: "12345" }
+    };
+
+    function showError(message) {
+      errorCard.textContent = message;
+      errorCard.classList.add("show");
+      setTimeout(() => {
+        errorCard.classList.remove("show");
+      }, 2000); // hide after 2 seconds
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const role = document.getElementById("role").value;
+
+      if (!username || !password || !role) {
+        showError("All fields are required.");
+        return;
+      }
+
+      if (
+        credentials[role] &&
+        credentials[role].username === username &&
+        credentials[role].password === password
+      ) {
+        sessionStorage.setItem("loggedInUser", JSON.stringify({ username, role }));
+        window.location.href = "dashboard.html";
+      } else {
+        showError("Invalid username, password, or role.");
+      }
+    });
+  </script>
+</body>
+</html>

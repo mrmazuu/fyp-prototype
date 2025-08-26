@@ -19,10 +19,12 @@ def normalize_userinfo(data):
     user_role = data["role"]
     user_email = data["email"]
     full_name = data["name"]
+    username = data["username"]
     created_at = data.get("created_at")
 
     user_info = {
         "name": full_name.title(),
+        "username": username,
         "email": user_email,
         "role": user_role.title(),
     }
